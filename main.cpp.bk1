@@ -1,0 +1,69 @@
+#include <cstdlib>
+#include <ctime>
+#include <thread>
+#include <unistd.h>
+
+#include "Poco/AsyncChannel.h"
+#include "Poco/AutoPtr.h"
+#include "Poco/ConsoleChannel.h"
+#include "Poco/Logger.h"
+#include "Poco/Message.h"
+
+#define DELAY_MS 1000
+#define DELAY_S 1 * 1000 * DELAY_MS
+
+using Poco::AsyncChannel;
+using Poco::AutoPtr;
+using Poco::ConsoleChannel;
+using Poco::Logger;
+
+void log_thread_1()
+{
+    Logger &logger1 = Logger::get("TestLogger1");
+
+    for (int i = 0; i < 10; ++i)
+    {
+        logger1.debug("Thread 1, debug");
+        logger1.information("Thread 1, information");
+        logger1.notice("Thread 1, notice");
+        logger1.warning("Thread 1, warning");
+        logger1.error("Thread 1, error");
+        logger1.critical("Thread 1, critical");
+        logger1.fatal("Thread 1, fatal");
+        usleep(DELAY_S);
+    }
+}
+
+void log_thread_2()
+{
+    Logger &logger2 = Logger::get("TestLogger2");
+
+    for (int i = 0; i < 10; ++i)
+    {
+        logger2.information("Thread 2, This is a test");
+        usleep(DELAY_S);
+    }
+}
+
+int main(int argc, char **argv)
+{
+    AutoPtr<ConsoleChannel> pCons(new ConsoleChannel);
+    AutoPtr<AsyncChannel> pAsync(new AsyncChannel(pCons));
+
+    Logger::root().setChannel(pAsync);
+    Logger::root().setLevel(Poco::Message::PRIO_DEBUG);
+
+    std::thread thread_1(log_thread_1);
+    std::thread thread_2(log_thread_2);
+
+    // for (int i = 0; i < 10; ++i)
+    // {
+    //     logger.information("This is a test");
+    //     usleep(DELAY_S);
+    // }
+
+    thread_1.join();
+    thread_2.join();
+
+    return 0;
+}
